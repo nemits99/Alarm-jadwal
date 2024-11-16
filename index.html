@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengingat Jadwal</title>
+  <style>
+    /* Gaya dasar untuk body */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      margin: 20px;
+      line-height: 1.6;
+    }
+  
+    /* Header */
+    h1 {
+      color: #0080ff;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+  
+ 
+  
+    /* Formulir */
+    form {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+  
+    form label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  
+    form select,
+    form input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  
+    form button {
+      background-color: #0080ff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+  
+    form button:hover {
+      background-color: #45a049;
+    }
+  
+    /* Tabel */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+  
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+  
+    th, td {
+      text-align: left;
+      padding: 12px;
+    }
+  
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+  
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+  
+    tr:hover {
+      background-color: #eafaf1;
+    }
+  
+    /* Tombol aksi di tabel */
+    table button {
+      background-color: #f44336;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+  
+    table button:hover {
+      background-color: #d32f2f;
+    }
+  
+    /* Pesan Offline */
+    p {
+      background-color: #ffcccb;
+      padding: 10px;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #721c24;
+    }
+  </style>
+  
+</head>
+<body>
+  <h1>Pengingat Jadwal</h1>
+  
+
+  <!-- Form untuk Menambahkan Jadwal -->
+  <form id="scheduleForm">
+    <label>
+      Hari:
+      <select id="day">
+        <option value="Monday">Senin</option>
+        <option value="Tuesday">Selasa</option>
+        <option value="Wednesday">Rabu</option>
+        <option value="Thursday">Kamis</option>
+        <option value="Friday">Jumat</option>
+        <option value="Saturday">Sabtu</option>
+        <option value="Sunday">Minggu</option>
+      </select>
+    </label>
+    <label>
+      Waktu (HH:MM):
+      <input type="time" id="time" required>
+    </label>
+    <label>
+      Pesan:
+      <input type="text" id="message" required>
+    </label>
+    <button type="submit">Tambahkan Jadwal</button>
+  </form>
+  
+  <!-- Tabel Jadwal -->
+  <h2>Jadwal</h2>
+  <table id="scheduleTable">
+    <thead>
+      <tr>
+        <th>Hari</th>
+        <th>Waktu</th>
+        <th>Pesan</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Jadwal akan ditambahkan di sini -->
+    </tbody>
+  </table>
+
+  <!-- Suara Pengingat -->
+  <audio id="alertSound" src="audio/alertalarm.wav"></audio>
+
+
+  <script>
+    // Ambil elemen penting
+    const form = document.getElementById('scheduleForm');
+    const scheduleTable = document.getElementById('scheduleTable').querySelector('tbody');
+    const alertSound = document.getElementById('alertSound');
+
+    // Fungsi untuk memuat jadwal dari local storage
+    function loadSchedule() {
+      const schedule = JSON.parse(localStorage.getItem('schedule')) || [];
+      scheduleTable.innerHTML = '';
+      schedule.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.day}</td>
+          <td>${item.time}</td>
+          <td>${item.message}</td>
+          <td><button onclick="deleteSchedule(${index})">Hapus</button></td>
+        `;
+        scheduleTable.appendChild(row);
+      });
+    }
+
+    // Fungsi untuk menyimpan jadwal ke local storage
+    function saveSchedule(schedule) {
+      localStorage.setItem('schedule', JSON.stringify(schedule));
+    }
+
+    // Fungsi untuk menambahkan jadwal baru
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const day = document.getElementById('day').value;
+      const time = document.getElementById('time').value;
+      const message = document.getElementById('message').value;
+
+      const schedule = JSON.parse(localStorage.getItem('schedule')) || [];
+      schedule.push({ day, time, message });
+      saveSchedule(schedule);
+      loadSchedule();
+      form.reset();
+    });
+
+ 
+    function deleteSchedule(index) {
+      const schedule = JSON.parse(localStorage.getItem('schedule')) || [];
+      schedule.splice(index, 1);
+      saveSchedule(schedule);
+      loadSchedule();
+    }
+
+    function checkSchedule() {
+  const now = new Date();
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const currentDay = dayNames[now.getDay()];
+  const currentTime = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+
+  const schedule = JSON.parse(localStorage.getItem('schedule')) || [];
+  schedule.forEach((item) => {
+    if (item.day === currentDay && item.time === currentTime) {
+    
+      alertSound.play();
+
+   
+      setTimeout(() => {
+        alert(`Pengingat: ${item.message}`);
+      }, 100); 
+    }
+  });
+}
+
+loadSchedule();
+
+setInterval(checkSchedule, 1000);
+
+
+  </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+
+      .then((registration) => {
+        console.log('Service Worker berhasil didaftarkan: ', registration);
+      })
+      .catch((error) => {
+        console.error('Service Worker gagal didaftarkan: ', error);
+      });
+  });
+}
+
+  </script>
+</body>
+</html>
